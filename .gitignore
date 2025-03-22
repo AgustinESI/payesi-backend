@@ -1,0 +1,54 @@
+# Byte-compiled files
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# Distribution / packaging
+.Python
+build/
+dist/
+*.egg-info/
+
+# Virtual environment
+.venv/
+env/
+venv/
+ENV/
+*.env
+
+# VSCode settings (if using VSCode)
+.vscode/
+
+# PyCharm settings (if using PyCharm)
+.idea/
+
+# Flask configuration
+instance/
+*.db
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Pytest cache
+.cache/
+
+# Local environment variables
+.env
+
+# mypy
+.mypy_cache/
+
+# coverage.py
+.coverage
+.coverage.*
+
+# pylint
+pylint-report.txt
+pylint-output.txt
+
+# Sphinx documentation
+docs/_build/
+
+# PyInstaller
+*.spec
