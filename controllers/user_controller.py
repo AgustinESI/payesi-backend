@@ -5,6 +5,7 @@ from models.user_model import User
 from datetime import datetime
 from models.errors.error_response_model import ErrorResponse
 from models.errors.custom_exception_model import CustomException
+from flask_cors import cross_origin
 
 # Create a Blueprint for the user controller
 user_controller = Blueprint('user_controller', __name__)
@@ -57,11 +58,8 @@ def get_user(dni):
     try:
         user = UserService.get_user_by_dni(dni)
         if user:
-            response = {
-                "status": "success",
-                "user": user.to_json()
-            }
-            return jsonify(response), 200
+            return jsonify(user.to_json()), 200
+        
         raise CustomException(f"User not found", 404) 
     except CustomException as e:
         error_response = ErrorResponse.from_exception(e, e.status_code)
@@ -87,11 +85,7 @@ def update_user(dni):
         
         user = UserService.update_user(dni, name, email, pwd, birth_date, image, amount, administrator)
         if user:
-            response = {
-                "status": "success",
-                "message": "User updated successfully",
-                "user": user.to_json()
-            }
+            response = { user.to_json()}    
             return jsonify(response), 200
         else:
             raise CustomException(f"An error occurred while trying to update the client", 500) 
@@ -140,6 +134,42 @@ def check_password(dni):
         
         raise CustomException("Incorrect password", 400)
         
+    except CustomException as e:
+        error_response = ErrorResponse.from_exception(e, e.status_code)
+        return jsonify(error_response.to_dict()), e.status_code
+    
+    except Exception as e:
+        error_response = ErrorResponse.from_exception(e, 500)
+        return jsonify(error_response.to_dict()), 500
+    
+
+@user_controller.route('/all', methods=['GET'])
+def list_users():
+    """ List all users in the database. """
+    users = User.query.all()  # Fetch all users
+    return jsonify([user.to_dict() for user in users]), 200
+
+
+@user_controller.route('/me', methods=['GET'])
+@cross_origin(origins='http://localhost:4200')
+def get_logged_user():
+    """ Returns the logged-in user info. """
+    try:
+        if not hasattr(request, "user"):  # Ensure user is set
+            return jsonify({"error": "Unauthorized"}), 401
+
+        user = UserService.get_user_by_email(request.user.get("email"))
+        if not user:
+            raise CustomException("User not found", 404)
+
+        # user_data = {
+        #     "dni": request.user.get("dni"),
+        #     "email": request.user.get("email"),
+        #     "roles": request.user.get("roles")
+        # }
+        
+        return jsonify(user.to_json()), 200
+    
     except CustomException as e:
         error_response = ErrorResponse.from_exception(e, e.status_code)
         return jsonify(error_response.to_dict()), e.status_code

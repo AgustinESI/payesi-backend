@@ -20,7 +20,7 @@ class ErrorResponse:
 
     @staticmethod
     def from_exception(exception: Exception, code: int = 500):
-        print(f" ❌ An error occurred: {str(exception)}")
+        print(f"❌ An error occurred: {str(exception)}")
         path = request.path
         return ErrorResponse(
             status_code=code,

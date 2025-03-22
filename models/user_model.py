@@ -42,7 +42,6 @@ class User(db.Model):
             "birth_date": self.birth_date.strftime('%d/%m/%Y'),
             "active": self.active,
             "image": self.image,
-            "password":self.pwd,
             "amount": float(self.amount),
             "administrator": self.administrator,
             "created_at": self.created_at.strftime('%d/%m/%Y') if self.created_at else None,

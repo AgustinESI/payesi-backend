@@ -33,12 +33,10 @@ class UserService:
         return User.query.filter_by(dni=dni).first()
     
     @staticmethod
-    def get_user_by_email_and_password(email, pwd):
+    def get_user_by_email(email):
         """Check if the given password matches the stored hash"""
-        user = User.query.filter_by(email=email).first()
-        if user and check_password_hash(user.pwd, pwd):
-            return user
-        return None
+        return User.query.filter_by(email=email).first()
+        
 
 
     @staticmethod
