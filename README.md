@@ -1,5 +1,3 @@
-Execute command `.venv\Scripts\activate` to start the enviorement
-
 # PayESI - Backend
 
 This project is a Flask-based web service, which provides APIs for user management, authentication, and other services. Below are the instructions on how to set up the project and run the web service.
@@ -32,7 +30,7 @@ Ensure you have the following installed:
    - On Windows:
 
      ```bash
-     .\.venv\Scriptsctivate
+     .\.venv\Scripts/Activate
      ```
 
    - On macOS/Linux:

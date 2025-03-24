@@ -1,12 +1,14 @@
 # user_service.py
 from models import db
 from models.user_model import User
+from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash  # For password hashing
+from sqlalchemy import text
 
 class UserService:
     
     @staticmethod
-    def create_user(dni, name, email, pwd, birth_date, image, amount=0.0, administrator=False):
+    def create_user(dni, name, email, pwd, birth_date, image, phone, address, amount=0.0, administrator=False):
         """Create a new user"""
         try:
             hashed_pwd = generate_password_hash(pwd)  # Hash the password before storing it
@@ -18,7 +20,9 @@ class UserService:
                 birth_date=birth_date, 
                 image=image, 
                 amount=amount, 
-                administrator=administrator
+                administrator=administrator,
+                phone=phone,
+                address=address
             )
             db.session.add(new_user)
             db.session.commit()
@@ -40,27 +44,43 @@ class UserService:
 
 
     @staticmethod
-    def update_user(dni, name=None, email=None, pwd=None, birth_date=None, image=None, amount=None, administrator=None):
+    def update_user(dni,name=None, phone=None, address=None,  birth_date=None, image=None):
         """Update a user"""
         user = User.query.filter_by(dni=dni).first()
         if user:
             if name:
                 user.name = name
-            if email:
-                user.email = email
-            if pwd:
-                user.pwd = generate_password_hash(pwd)  # Re-hash the password if changed
             if birth_date:
-                user.birth_date = birth_date
+                user.birth_date = datetime.strptime(birth_date, "%d/%m/%Y").date()
             if image:
                 user.image = image
-            if amount is not None:
-                user.amount = amount
-            if administrator is not None:
-                user.administrator = administrator
+            if phone is not None:
+                user.phone = phone
+            if address is not None:
+                user.address = address
+                
+            print(user.name)
+            db.session.flush()
             db.session.commit()
             return user
         return None
+
+
+    @staticmethod
+    def update_image_user(dni:str,image=None):
+        """Update a user"""
+        user = User.query.filter_by(dni=dni).first()
+        if user:
+            if image:
+                user.image = image
+                
+            print(user.name)
+            db.session.flush()
+            db.session.commit()
+            return user
+        return None
+
+
 
     @staticmethod
     def delete_user(dni):

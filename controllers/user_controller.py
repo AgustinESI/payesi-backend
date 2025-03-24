@@ -6,6 +6,7 @@ from datetime import datetime
 from models.errors.error_response_model import ErrorResponse
 from models.errors.custom_exception_model import CustomException
 from flask_cors import cross_origin
+from services.credit_card_service import CreditCardService
 
 # Create a Blueprint for the user controller
 user_controller = Blueprint('user_controller', __name__)
@@ -28,21 +29,27 @@ def create_user():
     image = data.get('image')
     amount = data.get('amount', 0.0)  # Default to 0 if not provided
     administrator = data.get('administrator', False)  # Default to False if not provided
+    phone = data.get('phone')
+    address = data.get('address')
     
     try:
         # Check if the user already exists
         existing_user = UserService.get_user_by_dni(dni)
         if existing_user:
-            raise CustomException(f"User with DNI {dni} already exists", 400)     
-                      
+            raise CustomException(f"User with DNI '{dni}' already exists", 400)    
+        
+        existing_user = UserService.get_user_by_email(email)
+        if existing_user:
+            raise CustomException(f"User with email '{email}' already exists", 400)  
+                
         # Convert the 'birth_date' string to a datetime.date object
         birth_date = datetime.strptime(birth_date, '%Y-%m-%d').date()
 
         # Call the UserService to create the user
-        new_user = UserService.create_user(dni, name, email, pwd, birth_date, image, amount, administrator)
-
+        new_user = UserService.create_user(dni, name, email, pwd, birth_date, image, phone, address, amount, administrator)
+        
         # Prepare response
-        response = { new_user.to_json() }
+        response = new_user.to_json() 
         return jsonify(response), 201
 
     except CustomException as e:
@@ -76,16 +83,14 @@ def update_user(dni):
     try:
         data = request.get_json()
         name = data.get('name')
-        email = data.get('email')
-        pwd = data.get('pwd')
         birth_date = data.get('birth_date')
         image = data.get('image')
-        amount = data.get('amount')
-        administrator = data.get('administrator')
+        phone = data.get('phone')
+        address = data.get('address')
         
-        user = UserService.update_user(dni, name, email, pwd, birth_date, image, amount, administrator)
+        user = UserService.update_user(dni,name, phone, address, birth_date, image)
         if user:
-            response = { user.to_json()}    
+            response = user.to_json()
             return jsonify(response), 200
         else:
             raise CustomException(f"An error occurred while trying to update the client", 500) 
@@ -162,12 +167,6 @@ def get_logged_user():
         if not user:
             raise CustomException("User not found", 404)
 
-        # user_data = {
-        #     "dni": request.user.get("dni"),
-        #     "email": request.user.get("email"),
-        #     "roles": request.user.get("roles")
-        # }
-        
         return jsonify(user.to_json()), 200
     
     except CustomException as e:
@@ -176,4 +175,37 @@ def get_logged_user():
     
     except Exception as e:
         error_response = ErrorResponse.from_exception(e, 500)
+        return jsonify(error_response.to_dict()), 500
+    
+@user_controller.route('/image', methods=['PUT'])
+@cross_origin(origins='http://localhost:4200')
+def upload_image():
+    """ Upload users image. """
+    try:
+        if not hasattr(request, "user"):  # Ensure user is set
+            return jsonify({"error": "Unauthorized"}), 401
+
+        user = UserService.get_user_by_email(request.user.get("email"))
+        if not user:
+            raise CustomException("User not found", 404)
+        
+        data = request.get_json()
+        image = data.get('image')
+        
+        if image is None:
+            raise CustomException("Image is requred", 400)
+
+        user = UserService.update_image_user(user.dni, image)
+        if user:
+            response = user.to_json()
+            return jsonify(response), 200
+        else:
+            raise CustomException(f"An error occurred while trying to update picture of the client", 500) 
+        
+    except CustomException as e:
+        error_response = ErrorResponse.from_exception(e,e.status_code)
+        return jsonify(error_response.to_dict()), e.status_code
+    
+    except Exception as e:
+        error_response = ErrorResponse.from_exception(e,500)
         return jsonify(error_response.to_dict()), 500

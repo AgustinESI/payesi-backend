@@ -4,6 +4,7 @@ from config import Config
 from models import db, init_models
 from controllers.user_controller import user_controller 
 from controllers.auth_controller import auth_controller 
+from controllers.credit_card_controller import credit_card_controller
 from os import getenv
 from dotenv import load_dotenv
 from configuration.auth_filter import verify_token
@@ -27,6 +28,8 @@ app.before_request(verify_token)
 # Register the user controller blueprint
 app.register_blueprint(user_controller, url_prefix='/users')
 app.register_blueprint(auth_controller, url_prefix='/auth')
+app.register_blueprint(credit_card_controller, url_prefix='/credit_cards')
+
 
 # Check if we should create the database on startup
 if getenv('CREATE_DB_ON_STARTUP', False):

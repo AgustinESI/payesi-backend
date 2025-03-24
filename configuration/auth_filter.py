@@ -51,10 +51,10 @@ def verify_token():
     if request.method == 'OPTIONS':
         return None
     
-    if request.path in ['/auth/authenticate', 'public_route']:  # Exclude public routes
+    if request.path in ['/auth/authenticate', '/users/create', 'public_route']:  # Exclude public routes
         return
     
-    try:    
+    try:
         token = request.headers.get('Authorization')
         if not token:
             raise CustomException("Authorization header is missing. Please provide a valid Bearer token.", 401)
