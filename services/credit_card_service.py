@@ -6,7 +6,7 @@ from datetime import datetime
 class CreditCardService:
 
     @staticmethod
-    def create_credit_card(user_dni, card_data):
+    def create_credit_card(card_data):
         """Create a new credit card for a user."""
         try:
             new_card = CreditCard(
@@ -15,7 +15,7 @@ class CreditCardService:
                 type=card_data['type'],
                 expiration_date=datetime.strptime(card_data['expiration_date'], '%d/%m/%Y').date(),
                 card_holder_name=card_data['card_holder_name'],
-                user_dni=user_dni,
+                user_dni=card_data['user_dni'],
                 active=True
             )
             db.session.add(new_card)
