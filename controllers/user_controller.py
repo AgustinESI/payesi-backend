@@ -106,11 +106,32 @@ def update_user(dni):
 @user_controller.route('/<dni>/delete', methods=['DELETE'])
 def delete_user(dni):
     try:
-        user = UserService.delete_user(dni)
+        user = UserService.deactivate_user(dni)
         if user:
             response = {
                 "status": "success",
-                "message": "User deleted successfully"
+                "message": "User deactivated successfully"
+            }
+            return jsonify(response), 200
+        raise CustomException("User not found", 404)
+    
+    except CustomException as e:
+        error_response = ErrorResponse.from_exception(e, e.status_code)
+        return jsonify(error_response.to_dict()), e.status_code
+    
+    except Exception as e:
+        error_response = ErrorResponse.from_exception(e, 500)
+        return jsonify(error_response.to_dict()), 500
+
+# Route to active a user
+@user_controller.route('/<dni>/active', methods=['GET'])
+def activate_user(dni):
+    try:
+        user = UserService.activate_user(dni)
+        if user:
+            response = {
+                "status": "success",
+                "message": "User activated successfully"
             }
             return jsonify(response), 200
         raise CustomException("User not found", 404)
@@ -152,7 +173,7 @@ def check_password(dni):
 def list_users():
     """ List all users in the database. """
     users = User.query.all()  # Fetch all users
-    return jsonify([user.to_dict() for user in users]), 200
+    return jsonify([user.to_json() for user in users]), 200
 
 
 @user_controller.route('/me', methods=['GET'])

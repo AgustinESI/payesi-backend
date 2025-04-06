@@ -28,6 +28,10 @@ def authenticate():
         if value is False:
             raise CustomException("Invalid credentials", 401)
         
+        user = UserService.get_user_by_email(email);
+        if not user.active:
+            raise CustomException("Your account is disabled. To be able to operate, you must speak with the administrator.", 500)
+        
         return create_jwt_token(data =request.get_json())
         
     except CustomException as e:

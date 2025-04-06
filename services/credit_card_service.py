@@ -34,11 +34,11 @@ class CreditCardService:
     def get_credit_card(number):
         """Get a single credit card by its number."""
         return CreditCard.query.filter_by(number=number).first()
-
+    
     @staticmethod
-    def get_all_credit_cards(user_dni):
-        """Get all credit cards for a user."""
-        return CreditCard.query.filter_by(user_dni=user_dni).all()
+    def get_all_credit_cards():
+        """Get all credit cards."""
+        return CreditCard.query.all()
 
     @staticmethod
     def update_credit_card(number, card_data):

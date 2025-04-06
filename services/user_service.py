@@ -80,7 +80,24 @@ class UserService:
             return user
         return None
 
-
+    @staticmethod
+    def deactivate_user(dni):
+        user = User.query.filter_by(dni=dni).first()
+        if user:
+            user.active = False
+            db.session.commit()
+            return user
+        return None
+    
+    @staticmethod
+    def activate_user(dni):
+        user = User.query.filter_by(dni=dni).first()
+        if user:
+            user.active = True
+            db.session.commit()
+            return user
+        return None
+    
 
     @staticmethod
     def delete_user(dni):

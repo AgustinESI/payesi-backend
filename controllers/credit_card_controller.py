@@ -55,8 +55,6 @@ def create_credit_card():
         external_api_url = f"{getenv('CREDITCARD_BACKEND')}api/cards"
         resonse = requests.post(external_api_url, json=card_data, headers=headers)
         
-        
-        
         if resonse.status_code !=201:
             error_message = resonse.json().get("error", "Unknown error")
             raise CustomException(f"Credit card valdiation failed: {error_message}", 400)
@@ -84,6 +82,31 @@ def get_credit_card(number):
         if card:
             return jsonify(card.to_json()), 200
         raise CustomException(f"Credit card with number '{number}' not found", 404)
+    except CustomException as e:
+        error_response = ErrorResponse.from_exception(e, e.status_code)
+        return jsonify(error_response.to_dict()), e.status_code
+    except Exception as e:
+        error_response = ErrorResponse.from_exception(e, 500)
+        return jsonify(error_response.to_dict()), 500
+    
+@credit_card_controller.route('/all', methods=['GET'])
+def get_all_credit_cards():
+    try:
+        
+        if not hasattr(request, "user"):  # Ensure user is set
+            return jsonify({"error": "Unauthorized"}), 401
+
+        user = UserService.get_user_by_email(request.user.get("email"))
+        if not user:
+            raise CustomException("User not found", 404)
+        
+        if  user.administrator == False:
+            raise CustomException("Unauthorized", 401)
+        
+    
+        credit_cards = CreditCardService.get_all_credit_cards()
+        return jsonify([card.to_json() for card in credit_cards]), 200
+    
     except CustomException as e:
         error_response = ErrorResponse.from_exception(e, e.status_code)
         return jsonify(error_response.to_dict()), e.status_code
