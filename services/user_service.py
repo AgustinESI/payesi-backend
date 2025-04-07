@@ -1,6 +1,8 @@
 # user_service.py
 from models import db
+from models.user_friends import Friends
 from models.user_model import User
+from models.friendship_request_model import FriendshipRequest, RequestStatusEnum   
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash  # For password hashing
 from sqlalchemy import text
@@ -30,6 +32,90 @@ class UserService:
         except Exception as e:
             db.session.rollback()
             raise e
+        
+    @staticmethod
+    def create_friendship_request(request):
+        """Create a new user"""
+        try:
+            new_friendship_request = FriendshipRequest(
+                sender_dni=request.sender_dni, 
+                receiver_dni=request.receiver_dni, 
+                status=request.status, 
+                created_at=request.created_at, 
+                responded_at=request.responded_at
+            )
+            db.session.add(new_friendship_request)
+            db.session.commit()
+            return new_friendship_request
+        except Exception as e:
+            db.session.rollback()
+            raise e
+        
+    @staticmethod
+    def accept_friendship_request(current_user_dni, request_id):
+        """ Accept the friendship request and create mutual friendships """
+        try:
+            # Find the friendship request by its ID
+            friendship_request = FriendshipRequest.query.get(request_id)
+            if not friendship_request:
+                return False, "Friendship request not found"
+
+            # Ensure the current user is the receiver of the request
+            if friendship_request.receiver_dni != current_user_dni:
+                return False, "You cannot accept this request"
+
+            # Update the status of the request to 'ACCEPTED'
+            friendship_request.status = RequestStatusEnum.ACCEPTED
+            db.session.commit()
+
+            # Create mutual friendships using the 'Friends' association table
+            friendship_1 = Friends.insert().values(user_dni=friendship_request.sender_dni, friend_dni=friendship_request.receiver_dni)
+            friendship_2 = Friends.insert().values(user_dni=friendship_request.receiver_dni, friend_dni=friendship_request.sender_dni)
+
+            db.session.execute(friendship_1)
+            db.session.execute(friendship_2)
+            db.session.commit()
+
+            return True, "Friendship request accepted, users are now friends."
+        
+        except Exception as e:
+            # Handle any exception that occurs and return an error message
+            db.session.rollback()
+            return False, str(e)
+        
+    @staticmethod
+    def reject_friendship_request(current_user_dni, request_id):
+        """ Reject a friendship request """
+        try:
+            # Find the friendship request by its ID
+            friendship_request = FriendshipRequest.query.get(request_id)
+            if not friendship_request:
+                return False, "Friendship request not found"
+
+            # Ensure the current user is the receiver of the request
+            if friendship_request.receiver_dni != current_user_dni:
+                return False, "You cannot reject this request"
+
+            # Update the status of the request to 'REJECTED'
+            friendship_request.status = RequestStatusEnum.REJECTED
+            db.session.commit()
+
+            return True, "Friendship request rejected."
+
+        except Exception as e:
+            # Handle any exception that occurs and return an error message
+            db.session.rollback()
+            return False, str(e)
+        
+    @staticmethod
+    def remove_friendship(user_dni: str, friend_dni: str):
+        db.session.execute(
+            Friends.delete().where(
+                (Friends.c.user_dni == user_dni) &
+                (Friends.c.friend_dni == friend_dni)
+            )
+        )
+        db.session.commit()
 
     @staticmethod
     def get_user_by_dni(dni):

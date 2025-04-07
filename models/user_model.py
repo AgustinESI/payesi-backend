@@ -2,7 +2,8 @@ from datetime import datetime
 from sqlalchemy import Column, String, Boolean, Date, DECIMAL, ForeignKey
 from sqlalchemy.orm import relationship
 # from .credit_card_model import CreditCard
-from models import db 
+from models import db
+from models.user_friends import Friends
 
 class User(db.Model):
     __tablename__ = 'user'
@@ -23,6 +24,14 @@ class User(db.Model):
     
     # Define a relationship to CreditCard (one-to-many)
     credit_cards = relationship('CreditCard', back_populates='user', cascade="all, delete-orphan")
+    
+    friends = relationship(
+        'User',
+        secondary=Friends,
+        primaryjoin=dni == Friends.c.user_dni,
+        secondaryjoin=dni == Friends.c.friend_dni,
+        backref='friend_of'
+    )
 
     def to_json(self):
         return {
@@ -38,5 +47,6 @@ class User(db.Model):
             "phone": self.phone,
             "created_at": self.created_at.strftime('%d/%m/%Y') if self.created_at else None,
             "updated_at": self.updated_at.strftime('%d/%m/%Y') if self.updated_at else None,
-            "credit_cards": [card.to_json() for card in self.credit_cards]
+            "credit_cards": [card.to_json() for card in self.credit_cards],
+             "friends": [{"dni": friend.dni, "name": friend.name, "image":friend.image} for friend in self.friends],
         }

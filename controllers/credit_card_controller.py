@@ -51,13 +51,13 @@ def create_credit_card():
         print(card_data)
 
         # Validate the credit card information with the payesi-creditcards backend
-        headers = {"Content-Type": "application/json"}
-        external_api_url = f"{getenv('CREDITCARD_BACKEND')}api/cards"
-        resonse = requests.post(external_api_url, json=card_data, headers=headers)
+        # headers = {"Content-Type": "application/json"}
+        # external_api_url = f"{getenv('CREDITCARD_BACKEND')}api/cards"
+        # resonse = requests.post(external_api_url, json=card_data, headers=headers)
         
-        if resonse.status_code !=201:
-            error_message = resonse.json().get("error", "Unknown error")
-            raise CustomException(f"Credit card valdiation failed: {error_message}", 400)
+        # if resonse.status_code !=201:
+        #     error_message = resonse.json().get("error", "Unknown error")
+        #     raise CustomException(f"Credit card valdiation failed: {error_message}", 400)
 
 
         # Call the CreditCardService to create the card
