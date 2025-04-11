@@ -88,7 +88,7 @@ def update_user(dni):
         phone = data.get('phone')
         address = data.get('address')
         
-        user = UserService.update_user(dni,name, phone, address, birth_date, image)
+        user = UserService.update_user(dni,name, phone, address, birth_date, image, None)
         if user:
             response = user.to_json()
             return jsonify(response), 200

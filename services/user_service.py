@@ -130,7 +130,7 @@ class UserService:
 
 
     @staticmethod
-    def update_user(dni,name=None, phone=None, address=None,  birth_date=None, image=None):
+    def update_user(dni,name=None, phone=None, address=None,  birth_date=None, image=None, amount=None):
         """Update a user"""
         user = User.query.filter_by(dni=dni).first()
         if user:
@@ -144,6 +144,8 @@ class UserService:
                 user.phone = phone
             if address is not None:
                 user.address = address
+            if amount is not None:
+                user.amount = amount
                 
             print(user.name)
             db.session.flush()
