@@ -44,6 +44,41 @@ def get_pending_friendship_requests():
         # Handle any exceptions and return an error response
         return jsonify({"error": str(e)}), 500
 
+@friendship_controller.route('/favourite', methods=['POST'])
+@cross_origin(origins='http://localhost:4200')
+def add_user_favourite_request():
+    """ Add user to favourite list. """
+    
+    try:
+        if not hasattr(request, "user"):  # Ensure user is set
+            return jsonify({"error": "Unauthorized"}), 401
+        
+        # Get the logged-in user and the friend to add
+        current_user = UserService.get_user_by_email(request.user.get("email"))
+        if not current_user:
+            raise CustomException("User not found", 404)
+        
+        data = request.get_json()
+        favourite_dni = data.get('favourite_dni')
+        
+        favourite = UserService.get_user_by_dni(favourite_dni)
+        if not favourite:
+            raise CustomException("Friend not found", 404)
+        
+        UserService.add_user_favourite(current_user.dni, favourite_dni)
+    
+        current_user = UserService.get_user_by_email(request.user.get("email"))
+        return jsonify(current_user.to_json())
+    
+    except CustomException as e:
+        error_response = ErrorResponse.from_exception(e, e.status_code)
+        return jsonify(error_response.to_dict()), e.status_code
+    
+    except Exception as e:
+        error_response = ErrorResponse.from_exception(e, 500)
+        return jsonify(error_response.to_dict()), 500
+
+
 
 @friendship_controller.route('/new', methods=['POST'])
 @cross_origin(origins='http://localhost:4200')

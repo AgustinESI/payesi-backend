@@ -3,7 +3,7 @@ from sqlalchemy import Column, String, Boolean, Date, DECIMAL, ForeignKey
 from sqlalchemy.orm import relationship
 # from .credit_card_model import CreditCard
 from models import db
-from models.user_friends import Friends
+from models.user_relations import Friends, Blocked, Favourites
 
 class User(db.Model):
     __tablename__ = 'user'
@@ -32,7 +32,25 @@ class User(db.Model):
         secondaryjoin=dni == Friends.c.friend_dni,
         backref='friend_of'
     )
+    
+     # Blocked users (many-to-many)
+    blocked_users = relationship(
+        'User',
+        secondary=Blocked,
+        primaryjoin=dni == Blocked.c.user_dni,
+        secondaryjoin=dni == Blocked.c.blocked_dni,
+        backref='blocked_by'
+    )
 
+    # Favourite users (many-to-many)
+    favourite_users = relationship(
+        'User',
+        secondary=Favourites,
+        primaryjoin=dni == Favourites.c.user_dni,
+        secondaryjoin=dni == Favourites.c.favourite_dni,
+        backref='favourited_by'
+    )
+    
     def to_json(self):
         return {
             "dni": self.dni,
@@ -48,5 +66,7 @@ class User(db.Model):
             "created_at": self.created_at.strftime('%d/%m/%Y') if self.created_at else None,
             "updated_at": self.updated_at.strftime('%d/%m/%Y') if self.updated_at else None,
             "credit_cards": [card.to_json() for card in self.credit_cards],
-             "friends": [{"dni": friend.dni, "name": friend.name, "image":friend.image} for friend in self.friends],
+            "friends": [{"dni": friend.dni, "name": friend.name, "image": friend.image} for friend in self.friends],
+            "blocked_users": [{"dni": user.dni, "name": user.name, "image": user.image} for user in self.blocked_users],
+            "favourite_users": [{"dni": user.dni, "name": user.name, "image": user.image} for user in self.favourite_users],
         }

@@ -1,6 +1,6 @@
 # user_service.py
 from models import db
-from models.user_friends import Friends
+from models.user_relations import Friends
 from models.user_model import User
 from models.friendship_request_model import FriendshipRequest, RequestStatusEnum   
 from datetime import datetime
@@ -202,5 +202,17 @@ class UserService:
         """Check if the given password matches the stored hash"""
         user = User.query.filter_by(email=email).first()
         if user and check_password_hash(user.pwd, password):
+            return True
+        return False
+
+    @staticmethod
+    def add_user_favourite(user_dni, favourite_dni):
+        """Add a user to the favourites list"""
+        user = User.query.filter_by(dni=user_dni).first()
+        favourite = User.query.filter_by(dni=favourite_dni).first()
+        
+        if user and favourite:
+            user.favourite_users.append(favourite)
+            db.session.commit()
             return True
         return False
