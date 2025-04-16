@@ -75,7 +75,6 @@ def get_user(dni):
     except Exception as e:
         error_response = ErrorResponse.from_exception(e, 500)
         return jsonify(error_response.to_dict()), 500
-    return jsonify(response), 404
 
 # Route to update a user
 @user_controller.route('/<dni>/update', methods=['PUT'])
