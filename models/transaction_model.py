@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, String, ForeignKey, DECIMAL, Date, Integer, BigInteger
+from sqlalchemy import Column, String, ForeignKey, DECIMAL, DateTime, Integer, BigInteger
 from sqlalchemy.orm import relationship
 from models import db 
 
@@ -10,10 +10,10 @@ class Transaction(db.Model):
     amount = Column(DECIMAL(10, 2), nullable=False, default=0.0)
     transaction_type = Column(String(50), nullable=False)
     message = Column(String(255), nullable=False)
-    date = Column(Date, nullable=False, default=datetime.utcnow)
+    date = Column(DateTime, nullable=False, default=datetime.utcnow)
     status = Column(String(50), nullable=False)
 
-    credit_card_number = Column(BigInteger, ForeignKey('creditcard.number'), nullable=False)
+    credit_card_number = Column(BigInteger, ForeignKey('creditcard.number'), nullable=True)
     sender_dni = Column(String(36), ForeignKey('user.dni'), nullable=False)
     receiver_dni = Column(String(36), ForeignKey('user.dni'), nullable=False)
 

@@ -216,3 +216,42 @@ class UserService:
             db.session.commit()
             return True
         return False
+    
+    @staticmethod
+    def remove_user_favourite(user_dni, favourite_dni):
+        """Remove a user from the favourites list"""
+        user = User.query.filter_by(dni=user_dni).first()
+        favourite = User.query.filter_by(dni=favourite_dni).first()
+        
+        if user and favourite and favourite in user.favourite_users:
+            user.favourite_users.remove(favourite)
+            db.session.commit()
+            return True
+        return False
+    
+    
+    @staticmethod
+    def block_user(user_dni, blocked_dni):
+        """Add a user to the blocked list"""
+        user = User.query.filter_by(dni=user_dni).first()
+        blocked_user = User.query.filter_by(dni=blocked_dni).first()
+        
+        if user and blocked_user and blocked_user not in user.blocked_users:
+            user.blocked_users.append(blocked_user)
+            db.session.commit()
+            return True
+        return False
+
+    @staticmethod
+    def unblock_user(user_dni, blocked_dni):
+        """Remove a user from the blocked list"""
+        user = User.query.filter_by(dni=user_dni).first()
+        blocked_user = User.query.filter_by(dni=blocked_dni).first()
+        
+        if user and blocked_user and blocked_user in user.blocked_users:
+            user.blocked_users.remove(blocked_user)
+            db.session.commit()
+            return True
+        return False
+
+    

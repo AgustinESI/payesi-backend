@@ -1,5 +1,5 @@
 from models.transaction_model import Transaction
-from models.transaction_request_model import TransactionRequest, RequestStatusEnum
+from models.enums import RequestStatusEnum
 from models import db
 from datetime import datetime
 
@@ -31,7 +31,7 @@ class TransactionService:
     def accept_transaction_request(transaction_request):
         """Accept a transaction request."""
         try:
-            transaction_request.status = RequestStatusEnum.ACCEPTED
+            transaction_request.status = RequestStatusEnum.COMPLETED
             transaction_request.responded_at = datetime.utcnow()
             db.session.commit()
         except Exception as e:

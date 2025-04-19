@@ -78,6 +78,40 @@ def add_user_favourite_request():
         error_response = ErrorResponse.from_exception(e, 500)
         return jsonify(error_response.to_dict()), 500
 
+@friendship_controller.route('/favourite/remove', methods=['POST'])
+@cross_origin(origins='http://localhost:4200')
+def remove_user_favourite_request():
+    """ Remove user from favourite list. """
+    
+    try:
+        if not hasattr(request, "user"):  # Ensure user is set
+            return jsonify({"error": "Unauthorized"}), 401
+        
+        # Get the logged-in user and the friend to remove
+        current_user = UserService.get_user_by_email(request.user.get("email"))
+        if not current_user:
+            raise CustomException("User not found", 404)
+        
+        data = request.get_json()
+        favourite_dni = data.get('favourite_dni')
+        
+        favourite = UserService.get_user_by_dni(favourite_dni)
+        if not favourite:
+            raise CustomException("Favorite not found", 404)
+        
+        UserService.remove_user_favourite(current_user.dni, favourite_dni)
+        
+        current_user = UserService.get_user_by_email(request.user.get("email"))
+        return jsonify(current_user.to_json())
+    
+    except CustomException as e:
+        error_response = ErrorResponse.from_exception(e, e.status_code)
+        return jsonify(error_response.to_dict()), e.status_code
+    
+    except Exception as e:
+        error_response = ErrorResponse.from_exception(e, 500)
+        return jsonify(error_response.to_dict()), 500
+
 
 
 @friendship_controller.route('/new', methods=['POST'])
@@ -103,6 +137,12 @@ def create_friendship_request():
         friend = UserService.get_user_by_dni(friend_dni)
         if not friend:
             raise CustomException("Friend not found", 404)
+        
+        if current_user in friend.blocked_users:
+            raise CustomException("Cannot request transaction. You have been blocked by the other user.", 403)
+        
+        if friend in current_user.blocked_users:
+            raise CustomException("Cannot request transaction. You have blocked the other user.", 403)
         
         # Check if already friends or if there's already a pending request
         existing_request = FriendshipRequest.query.filter(
@@ -217,3 +257,65 @@ def delete_friend(friend_dni):
     except Exception as e:
         error_response = ErrorResponse.from_exception(e, 500)
         return jsonify(error_response.to_dict()), 500
+
+
+@friendship_controller.route('/block', methods=['POST'])
+@cross_origin(origins='http://localhost:4200')
+def block_user_request():
+    """ Block a user. """
+    try:
+        if not hasattr(request, "user"):
+            return jsonify({"error": "Unauthorized"}), 401
+
+        current_user = UserService.get_user_by_email(request.user.get("email"))
+        if not current_user:
+            raise CustomException("User not found", 404)
+
+        data = request.get_json()
+        blocked_dni = data.get('blocked_dni')
+
+        blocked_user = UserService.get_user_by_dni(blocked_dni)
+        if not blocked_user:
+            raise CustomException("User to block not found", 404)
+
+        UserService.block_user(current_user.dni, blocked_dni)
+
+        # Optional: Return updated user info
+        current_user = UserService.get_user_by_email(current_user.email)
+        return jsonify(current_user.to_json())
+
+    except CustomException as e:
+        return jsonify(ErrorResponse.from_exception(e, e.status_code).to_dict()), e.status_code
+    except Exception as e:
+        return jsonify(ErrorResponse.from_exception(e, 500).to_dict()), 500
+
+
+@friendship_controller.route('/unblock', methods=['POST'])
+@cross_origin(origins='http://localhost:4200')
+def unblock_user_request():
+    """ Unblock a user. """
+    try:
+        if not hasattr(request, "user"):
+            return jsonify({"error": "Unauthorized"}), 401
+
+        current_user = UserService.get_user_by_email(request.user.get("email"))
+        if not current_user:
+            raise CustomException("User not found", 404)
+
+        data = request.get_json()
+        blocked_dni = data.get('blocked_dni')
+
+        blocked_user = UserService.get_user_by_dni(blocked_dni)
+        if not blocked_user:
+            raise CustomException("User to unblock not found", 404)
+
+        UserService.unblock_user(current_user.dni, blocked_dni)
+
+        # Optional: Return updated user info
+        current_user = UserService.get_user_by_email(current_user.email)
+        return jsonify(current_user.to_json())
+
+    except CustomException as e:
+        return jsonify(ErrorResponse.from_exception(e, e.status_code).to_dict()), e.status_code
+    except Exception as e:
+        return jsonify(ErrorResponse.from_exception(e, 500).to_dict()), 500
