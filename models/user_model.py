@@ -24,7 +24,8 @@ class User(db.Model):
     
     # Define a relationship to CreditCard (one-to-many)
     credit_cards = relationship('CreditCard', back_populates='user', cascade="all, delete-orphan")
-    
+    api_keys = relationship('ApiKey', back_populates='user', cascade="all, delete-orphan")
+
     friends = relationship(
         'User',
         secondary=Friends,
