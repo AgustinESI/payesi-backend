@@ -51,7 +51,7 @@ def verify_token():
     if request.method == 'OPTIONS':
         return None
     
-    if request.path in ['/auth/authenticate', '/users/create', 'public_route']:  # Exclude public routes
+    if request.path in ['/auth/authenticate', '/users/create', 'public_route', '/api/payments/request']:  # Exclude public routes
         return
     
     try:

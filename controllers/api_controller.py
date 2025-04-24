@@ -7,6 +7,9 @@ from models.errors.error_response_model import ErrorResponse
 from models.user_model import User
 from models.apikey_model import ApiKey
 from services.api_service import ApiService
+from services.transaction_service import TransactionService
+from models.enums import TransactionTypeEnum, RequestStatusEnum
+from models.transaction_model import Transaction
 import uuid
 
 api_controller = Blueprint('api_controller', __name__)
@@ -141,8 +144,54 @@ def delete_key(api_key_id):
     
 @api_controller.route('/payments/request', methods=['POST'])
 def request_payment():
-    return jsonify({"message": "Payment request received"}), 200
+    """ Create a new transaction request from sender to api client. """
+    try:
+        # Get the data from the request
+        data = request.get_json()
+        if not data:
+            raise CustomException("Invalid request data", 400)
+        
+        request_api_key = data.get("api_key")
+        user_dni = ApiKey.query.filter_by(api_key=request_api_key).first()
+        if not user_dni:
+            raise CustomException("Invalid API key", 401)
+        current_user = UserService.get_user_by_dni(user_dni.user_dni)
+        if not current_user:
+            raise CustomException("User not found", 404)
+        
+        receiver_dni = current_user.dni
+        sender_dni = data.get("sender_dni")
+        if receiver_dni == sender_dni:
+            raise CustomException("Cannot send money to yourself", 400)
+        amount = int(data.get("amount"))
+        message = data.get("message")
 
-@api_controller.route('/payments/confirm/<int:request_id>', methods=['POST'])
-def confirm_payment(request_id):
-    return {"message": "Payment confirmation received"}, 200
+        # Check if the receiver exists
+        sender = User.query.filter_by(dni=sender_dni).first()
+        if not sender:
+            raise CustomException(f"Sender not found", 400)
+        
+        if current_user in sender.blocked_users:
+            raise CustomException("Cannot request transaction. You have been blocked by the other user.", 403)
+        
+        if sender in current_user.blocked_users:
+            raise CustomException("Cannot request transaction. You have blocked the other user.", 403)
+            
+        # Create the transaction record
+        transaction_request = Transaction(
+            amount=amount,
+            message=message,
+            sender_dni=sender.dni,
+            receiver_dni=receiver_dni,
+            transaction_type=TransactionTypeEnum.REQUEST,
+            status=RequestStatusEnum.PENDING,
+        )
+        # Add the transaction to the database
+        TransactionService.create_request(transaction_request)
+        return jsonify(transaction_request.to_json()), 201
+    except CustomException as e:
+        error_response = ErrorResponse.from_exception(e,e.status_code)
+        return jsonify(error_response.to_dict()), e.status_code
+    except Exception as e:
+        error_response = ErrorResponse.from_exception(e, 500)
+        return jsonify(error_response.to_dict()), 500
