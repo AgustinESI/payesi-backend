@@ -57,6 +57,8 @@ Before running the web service, you need to create an `.env` file in the root of
    SECRET_KEY=your-secret-key
    JWT_EXPIRATION_DAYS=3600
    CREATE_DB_ON_STARTUP=True
+   PAYPAL_CLIENT_ID=your-client-id
+   PAYPAL_CLIENT_SECRET=your-client-secret
    ```
 
 2. Make sure to load the environment variables by adding this to your `app.py`:

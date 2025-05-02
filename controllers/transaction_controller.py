@@ -9,6 +9,7 @@ from models.errors.custom_exception_model import CustomException
 from models.errors.error_response_model import ErrorResponse
 from services.transaction_service import TransactionService
 from services.user_service import UserService
+from services.paypal_service import PaypalService
 
 transaction_controller = Blueprint('transaction_controller', __name__)
 
@@ -74,7 +75,7 @@ def get_transaction_by_id(transaction_id):
         ).first()
         
         if not transaction:
-            raise CustomException(f"Transaction not found or access denied", 403) 
+            raise CustomException("Transaction not found or access denied", 403) 
         
         transaction_json = transaction.to_json()
         
@@ -117,11 +118,11 @@ def create_transaction():
         # Check if the receiver exists
         receiver = User.query.filter_by(dni=receiver_dni).first()
         if not receiver:
-            raise CustomException(f"Receiver not found", 400) 
+            raise CustomException("Receiver not found", 400) 
 
         # Check if the sender has enough money
         if current_user.amount < amount:
-            raise CustomException(f"Insufficient funds", 400) 
+            raise CustomException("Insufficient funds", 400) 
 
         # Check if the credit card exists and belongs to the sender
         credit_card = CreditCard.query.filter_by(number=credit_card_number, user_dni=sender_dni).first()
@@ -186,7 +187,7 @@ def request_transaction():
         # Check if the receiver exists
         sender = User.query.filter_by(dni=sender_dni).first()
         if not sender:
-            raise CustomException(f"Sender not found", 400)
+            raise CustomException("Sender not found", 400)
         
         if current_user in sender.blocked_users:
             raise CustomException("Cannot request transaction. You have been blocked by the other user.", 403)
@@ -252,7 +253,7 @@ def accept_transaction_request(request_id):
             raise CustomException("Receiver user not found", 404)
 
         if current_user.amount < current_request.amount:
-            raise CustomException(f"Insufficient funds", 400) 
+            raise CustomException("Insufficient funds", 400) 
         
         current_user.amount -= current_request.amount
         receiver_user.amount += current_request.amount
@@ -335,3 +336,40 @@ def get_pending_transaction_requests():
     except Exception as e:
         # Manejar cualquier excepción y devolver una respuesta de error
         return jsonify({"error": str(e)}), 500
+    
+@transaction_controller.route('/chargefunds', methods=['POST'])
+@cross_origin(origins='http://localhost:4200')  # Adjust your CORS policy as needed
+def charge_funds():
+    try:
+        # Ensure user is authenticated
+        if not hasattr(request, "user"):  # Check if the user is set in the request
+            return jsonify({"error": "Unauthorized"}), 401
+
+        # Get the logged-in user (sender)
+        current_user = UserService.get_user_by_email(request.user.get("email"))
+        if not current_user:
+            raise CustomException("User not found", 404)
+
+        # Get the data from the request
+        data = request.get_json()
+        amount = int(data.get("amount"))
+        credit_card_number = data.get("credit_card_number")
+
+        # Check if the credit card exists and belongs to the sender
+        sender_dni = current_user.dni
+        credit_card = CreditCard.query.filter_by(number=credit_card_number, user_dni=sender_dni).first()
+        if not credit_card:
+            return jsonify({"error": "Invalid credit card"}), 400
+        
+        PaypalService.authorize_charge(credit_card.paypal_token, amount)
+
+        current_user.amount += amount
+        # Update the user's amount in the database
+        UserService.update_user(dni=current_user.dni, amount=current_user.amount)
+        return jsonify({"message": "Funds charged successfully"}), 200
+    except CustomException as e:
+        error_response = ErrorResponse.from_exception(e,e.status_code)
+        return jsonify(error_response.to_dict()), e.status_code
+    except Exception as e:
+        error_response = ErrorResponse.from_exception(e, 500)
+        return jsonify(error_response.to_dict()), 500

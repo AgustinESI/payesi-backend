@@ -13,6 +13,7 @@ class CreditCard(db.Model):
     expiration_date = Column(Date, nullable=False)
     active = Column(Boolean, nullable=False, default=True)
     card_holder_name = Column(String(255), nullable=False)
+    paypal_token = Column(String(32), nullable=False, unique=True)
     created_at = Column(Date, nullable=False, default=datetime.utcnow)
     updated_at = Column(Date, onupdate=datetime.utcnow)
     
@@ -29,6 +30,7 @@ class CreditCard(db.Model):
             "expiration_date": self.expiration_date.strftime('%d/%m/%Y'),
             "active": self.active,
             "card_holder_name": self.card_holder_name,
+            "paypal_token": self.paypal_token,
             "user_dni": self.user_dni,
             "created_at": self.created_at.strftime('%d/%m/%Y') if self.created_at else None,
             "updated_at": self.updated_at.strftime('%d/%m/%Y') if self.updated_at else None

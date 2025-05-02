@@ -1,14 +1,11 @@
 # controllers/credit_card_controller.py
 from flask import Blueprint, request, jsonify
 from services.credit_card_service import CreditCardService
-from models import db
-from datetime import datetime
 from models.errors.error_response_model import ErrorResponse
 from models.errors.custom_exception_model import CustomException
 from services.user_service import UserService
+from services.paypal_service import PaypalService
 from flask_cors import cross_origin
-import requests
-from os import getenv
 
 credit_card_controller = Blueprint('credit_card_controller', __name__)
 
@@ -49,16 +46,8 @@ def create_credit_card():
         card_data['number'] = card_data['number'].replace(" ", "")
 
         print(card_data)
-
-        # Validate the credit card information with the payesi-creditcards backend
-        # headers = {"Content-Type": "application/json"}
-        # external_api_url = f"{getenv('CREDITCARD_BACKEND')}api/cards"
-        # resonse = requests.post(external_api_url, json=card_data, headers=headers)
-        
-        # if resonse.status_code !=201:
-        #     error_message = resonse.json().get("error", "Unknown error")
-        #     raise CustomException(f"Credit card valdiation failed: {error_message}", 400)
-
+        result = PaypalService.validate_card(card_data)
+        card_data['paypal_token'] = result
 
         # Call the CreditCardService to create the card
         new_card = CreditCardService.create_credit_card(card_data)
@@ -100,7 +89,7 @@ def get_all_credit_cards():
         if not user:
             raise CustomException("User not found", 404)
         
-        if  user.administrator == False:
+        if not user.administrator:
             raise CustomException("Unauthorized", 401)
         
     

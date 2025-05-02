@@ -16,7 +16,8 @@ class CreditCardService:
                 expiration_date=datetime.strptime(card_data['expiration_date'], '%d/%m/%Y').date(),
                 card_holder_name=card_data['card_holder_name'],
                 user_dni=card_data['user_dni'],
-                active=True
+                active=True,
+                paypal_token=card_data['paypal_token']
             )
             db.session.add(new_card)
             db.session.commit()
@@ -50,6 +51,7 @@ class CreditCardService:
             card.expiration_date = datetime.strptime(card_data.get('expiration_date', card.expiration_date.strftime('%d/%m/%Y')), '%d/%m/%Y').date()
             card.active = card_data.get('active', card.active)
             card.card_holder_name = card_data.get('card_holder_name', card.card_holder_name)
+            card.paypal_token = card_data.get('paypal_token', card.paypal_token)
             db.session.commit()
             return card
         return None
